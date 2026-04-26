@@ -1140,10 +1140,8 @@ nav.scrolled { background: rgba(247,244,239,0.93); backdrop-filter: blur(12px); 
   <div class="secret-reveal" id="secretReveal">
     <div class="secret-blast">
       <div class="secret-img-wrap">
-        <!-- Replace this placeholder with an actual photo of Reevs if desired -->
-        <div class="secret-img-placeholder">
-        <img src="reeva.png" alt="Reevs' Photo" class="secret-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-        </div>
+        <img src="reeva.png" alt="Reevs' Photo" class="secret-img" onerror="this.style.display='none';document.getElementById('secretPlaceholder').style.display='flex';">
+        <div class="secret-img-placeholder" id="secretPlaceholder" style="display:none;"></div>
       </div>
       <p class="secret-caption">it's <em>me</em>, obviously. 🫶</p>
     </div>
