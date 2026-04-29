@@ -138,15 +138,12 @@ nav.scrolled { background: rgba(247,244,239,0.93); backdrop-filter: blur(12px); 
 .fb-score-num { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: white; line-height: 1; }
 .fb-score-sep { font-family: 'Playfair Display', serif; font-size: 24px; color: rgba(255,255,255,0.2); }
 .fb-streak { font-family: 'DM Mono', monospace; font-size: 10px; color: #66BB6A; letter-spacing: 0.08em; }
-.pitch { position: relative; z-index: 2; width: 320px; height: 170px; margin: 0 auto 20px; }
-.goal-frame { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 130px; height: 55px; border: 2px solid rgba(255,255,255,0.28); border-bottom: none; border-radius: 4px 4px 0 0; }
-.goal-ln { position: absolute; top: 55px; left: 50%; transform: translateX(-50%); width: 190px; height: 2px; background: rgba(255,255,255,0.12); }
-.goal-net { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 130px; height: 55px; background: repeating-linear-gradient(0deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 1px,transparent 1px,transparent 10px),repeating-linear-gradient(90deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 1px,transparent 1px,transparent 16px); border-radius: 4px 4px 0 0; }
-.keeper { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 26px; transition: left 0.35s cubic-bezier(0.22,1,0.36,1), top 0.35s; }
-.ball { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 30px; transition: all 0.65s cubic-bezier(0.22,1,0.36,1); }
-.aim-guide { position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 3; }
-.aim-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; padding: 5px 12px; font-family: 'DM Mono', monospace; font-size: 11px; cursor: none; transition: background 0.2s; letter-spacing: 0.05em; }
-.aim-btn:hover,.aim-btn.active { background: rgba(255,255,255,0.22); }
+
+/* New canvas-based pitch */
+.pitch-wrap { position: relative; z-index: 2; width: 100%; max-width: 520px; margin: 0 auto 20px; }
+#fbCanvas { width: 100%; border-radius: 12px; display: block; touch-action: none; cursor: crosshair; }
+.fb-aim-label { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 10px; letter-spacing: 0.06em; position: relative; z-index: 2; }
+
 .shoot-btn { position: relative; z-index: 2; background: white; color: #182a18; border: none; padding: 14px 38px; border-radius: 50px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: none; transition: transform 0.2s, box-shadow 0.2s; }
 .shoot-btn:hover { transform: scale(1.04); box-shadow: 0 8px 28px rgba(0,0,0,0.28); }
 .shoot-btn:disabled { opacity: 0.5; transform: none; }
@@ -540,7 +537,7 @@ nav.scrolled { background: rgba(247,244,239,0.93); backdrop-filter: blur(12px); 
   /* CURSOR — disable on touch */
   body { cursor: auto; }
   .cursor, .cursor-ring { display: none; }
-  .aim-btn, .shoot-btn, .fb-refresh-btn, .click-me-btn, .book-btn, .book-dot, .chip { cursor: pointer; }
+  .shoot-btn, .fb-refresh-btn, .click-me-btn, .book-btn, .book-dot, .chip { cursor: pointer; }
 
   /* BACK TO TOP */
   .back-to-top { bottom: 24px; right: 20px; width: 44px; height: 44px; font-size: 16px; }
@@ -584,12 +581,8 @@ nav.scrolled { background: rgba(247,244,239,0.93); backdrop-filter: blur(12px); 
   .fb-scoreboard { gap: 10px; flex-wrap: wrap; justify-content: center; }
   .fb-score-box { padding: 8px 16px; }
   .fb-score-num { font-size: 22px; }
-  .pitch { width: 100%; max-width: 300px; height: 160px; margin: 0 auto 16px; }
-  .goal-frame { width: 110px; height: 50px; }
-  .goal-net { width: 110px; height: 50px; }
-  .goal-ln { width: 160px; top: 50px; }
-  .aim-guide { gap: 6px; bottom: 30px; width: 100%; justify-content: center; }
-  .aim-btn { font-size: 10px; padding: 4px 9px; cursor: pointer; }
+  .pitch-wrap { max-width: 100%; }
+  #fbCanvas { border-radius: 10px; }
   .shoot-btn { cursor: pointer; padding: 12px 28px; font-size: 13px; }
   /* FIFA portal day buttons */
   .fb-live-wrap { padding-top: 20px; margin-top: 24px; }
@@ -871,20 +864,12 @@ nav.scrolled { background: rgba(247,244,239,0.93); backdrop-filter: blur(12px); 
       </div>
     </div>
 
-    <div class="pitch">
-      <div class="goal-frame"></div>
-      <div class="goal-net"></div>
-      <div class="goal-ln"></div>
-      <div class="keeper" id="keeper">🧤</div>
-      <div class="ball" id="ball">⚽</div>
-      <div class="aim-guide" id="aimGuide">
-        <button class="aim-btn" data-aim="left" onclick="setAim('left')">↖ Left</button>
-        <button class="aim-btn" data-aim="center" onclick="setAim('center')">↑ Centre</button>
-        <button class="aim-btn" data-aim="right" onclick="setAim('right')">↗ Right</button>
-      </div>
+    <p class="fb-aim-label" id="aimLabel">Click or tap inside the goal to aim ↑ then shoot</p>
+    <div class="pitch-wrap">
+      <canvas id="fbCanvas" width="520" height="340"></canvas>
     </div>
     <button class="shoot-btn" id="shootBtn" onclick="takeShot()">⚽ Take the Shot</button>
-    <div class="fb-msg" id="fbMsg">Pick your corner ↑ then shoot</div>
+    <div class="fb-msg" id="fbMsg">Click anywhere in the goal to pick your spot</div>
 
     <!-- FIFA Match Centre -->
     <div class="fb-live-wrap">
@@ -1298,56 +1283,385 @@ document.addEventListener('mousemove', (e) => {
 });
 
 // =====================
-// FOOTBALL GAME
+// FOOTBALL GAME — Canvas-based with accurate collision detection
 // =====================
-let fbGoals=0,fbShots=0,fbStreak=0,fbBestStreak=0,fbAim=null,fbBusy=false;
-function setAim(dir){
-  fbAim=dir;
-  document.querySelectorAll('.aim-btn').forEach(b=>{
-    b.classList.toggle('active',b.dataset.aim===dir);
-  });
-  document.getElementById('fbMsg').textContent='Aimed '+dir+'. Now shoot. 🎯';
-  document.getElementById('fbMsg').style.color='rgba(255,255,255,0.6)';
-}
-function takeShot(){
-  if(fbBusy)return;
-  if(!fbAim){document.getElementById('fbMsg').textContent='Pick a corner first! ↑';document.getElementById('fbMsg').style.color='#FFA726';return;}
-  fbBusy=true;
-  const ball=document.getElementById('ball'),keeper=document.getElementById('keeper'),msg=document.getElementById('fbMsg'),btn=document.getElementById('shootBtn');
-  btn.disabled=true;
-  fbShots++;
-  document.getElementById('fbShots').textContent=fbShots;
-  const keeperDivesCorrect=Math.random()<0.35;
-  const keeperSide=keeperDivesCorrect?fbAim:(fbAim==='left'?'right':fbAim==='right'?'left':'center');
-  const keeperLeft=keeperSide==='left'?'18%':keeperSide==='right'?'80%':'50%';
-  keeper.style.left=keeperLeft;
-  keeper.style.top=keeperDivesCorrect?'6px':'14px';
-  const ballLeft=fbAim==='left'?'22%':fbAim==='right'?'76%':'50%';
-  ball.style.bottom='80%';ball.style.left=ballLeft;ball.style.fontSize='14px';ball.style.opacity='0.7';
-  setTimeout(()=>{
-    const scored=!keeperDivesCorrect||(keeperSide==='center'&&Math.random()<0.45);
-    if(scored){
-      fbGoals++;fbStreak++;fbBestStreak=Math.max(fbBestStreak,fbStreak);
-      document.getElementById('fbGoals').textContent=fbGoals;
-      document.getElementById('fbStreak').textContent=fbBestStreak;
-      const msgs=['🎉 GOAL!! Clean finish.','🔥 TOP CORNER! Keeper had no chance.','💥 GOAL! That\'s class.','✨ Right in the net. Smooth.'];
-      msg.textContent=msgs[Math.floor(Math.random()*msgs.length)];msg.style.color='#66BB6A';
-      confetti();
-    } else {
-      fbStreak=0;
-      const msgs=['🧤 Saved! Keeper guessed right.','😂 Miles wide, mate.','🙈 Hit the post!','🤦 Keeper ate that for breakfast.','📺 VAR checking... still saved.'];
-      msg.textContent=msgs[Math.floor(Math.random()*msgs.length)];msg.style.color='rgba(255,255,255,0.45)';
+(function() {
+  const canvas = document.getElementById('fbCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = 520, H = 340;
+  canvas.width = W; canvas.height = H;
+
+  // Goal dimensions
+  const GOAL = { x: 130, y: 30, w: 260, h: 110 };
+  const POST = 6;
+  const BALL_START = { x: W/2, y: H - 50 };
+
+  let fbGoals=0, fbShots=0, fbBestStreak=0, fbStreak=0;
+  let aimX = null, aimY = null;
+  let busy = false;
+
+  // Keeper
+  let keeperX = GOAL.x + GOAL.w/2;
+  let keeperY = GOAL.y + GOAL.h/2;
+  const keeperW = 52, keeperH = 52;
+  let keeperPatrolT = 0;
+  let keeperDiving = false;
+  let keeperDiveTargetX = null, keeperDiveTargetY = null;
+
+  // Ball
+  let ballX = BALL_START.x, ballY = BALL_START.y;
+  let ballVX = 0, ballVY = 0;
+  let ballFlying = false;
+  let ballScale = 1;
+
+  // Outcome flash on canvas
+  let outcomeText = null;
+  let outcomeColor = '#66BB6A';
+  let outcomeAlpha = 0;
+
+  function keeperPatrol(dt) {
+    if (keeperDiving) {
+      // Animate toward dive target
+      if (keeperDiveTargetX !== null) {
+        const spd = 0.18 * dt;
+        keeperX += (keeperDiveTargetX - keeperX) * spd;
+        keeperY += (keeperDiveTargetY - keeperY) * spd;
+      }
+      return;
     }
-    ball.style.bottom=scored?'62%':'70%';
-    setTimeout(()=>{
-      ball.style.bottom='0';ball.style.left='50%';ball.style.fontSize='30px';ball.style.opacity='1';
-      keeper.style.left='50%';keeper.style.top='10px';
-      btn.disabled=false;btn.textContent='⚽ Try Again';
-      fbBusy=false;fbAim=null;
-      document.querySelectorAll('.aim-btn').forEach(b=>b.classList.remove('active'));
-    },1800);
-  },650);
-}
+    keeperPatrolT += dt * 0.022;
+    const swing = GOAL.w/2 - keeperW/2 - 8;
+    keeperX = GOAL.x + GOAL.w/2 + Math.sin(keeperPatrolT) * swing * 0.6;
+    keeperY = GOAL.y + GOAL.h/2;
+  }
+
+  function drawPitch() {
+    ctx.fillStyle = '#1a3a1a';
+    ctx.fillRect(0, 0, W, H);
+    for (let i = 0; i < H; i += 30) {
+      ctx.fillStyle = i % 60 === 0 ? 'rgba(255,255,255,0.022)' : 'rgba(255,255,255,0.01)';
+      ctx.fillRect(0, i, W, 15);
+    }
+    // Penalty spot
+    ctx.beginPath();
+    ctx.arc(W/2, H - 52, 3, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fill();
+    // Penalty box
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(GOAL.x - 20, GOAL.y + GOAL.h, GOAL.w + 40, H - (GOAL.y + GOAL.h) - 10);
+    // Net grid
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(GOAL.x + POST, GOAL.y + POST, GOAL.w - POST*2, GOAL.h - POST);
+    ctx.clip();
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1;
+    for (let x = GOAL.x; x <= GOAL.x + GOAL.w; x += 20) {
+      ctx.beginPath(); ctx.moveTo(x, GOAL.y); ctx.lineTo(x, GOAL.y + GOAL.h); ctx.stroke();
+    }
+    for (let y = GOAL.y; y <= GOAL.y + GOAL.h; y += 15) {
+      ctx.beginPath(); ctx.moveTo(GOAL.x, y); ctx.lineTo(GOAL.x + GOAL.w, y); ctx.stroke();
+    }
+    ctx.restore();
+    // Posts
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = POST;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(GOAL.x, GOAL.y + GOAL.h);
+    ctx.lineTo(GOAL.x, GOAL.y);
+    ctx.lineTo(GOAL.x + GOAL.w, GOAL.y);
+    ctx.lineTo(GOAL.x + GOAL.w, GOAL.y + GOAL.h);
+    ctx.stroke();
+    // Goal line
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(GOAL.x - 20, GOAL.y + GOAL.h);
+    ctx.lineTo(GOAL.x + GOAL.w + 20, GOAL.y + GOAL.h);
+    ctx.stroke();
+  }
+
+  function drawAimZones() {
+    // Draw subtle goal zone hints when not busy
+    if (busy) return;
+    const zoneColors = ['rgba(255,100,100,0.06)', 'rgba(100,255,100,0.06)', 'rgba(100,100,255,0.06)'];
+    const zoneW = (GOAL.w - POST*2) / 3;
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = zoneColors[i];
+      ctx.fillRect(GOAL.x + POST + i * zoneW, GOAL.y + POST, zoneW, GOAL.h - POST);
+    }
+  }
+
+  function drawAimTarget() {
+    if (aimX === null || busy) return;
+    ctx.save();
+    // Outer ring
+    ctx.beginPath();
+    ctx.arc(aimX, aimY, 13, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(255,210,60,0.9)';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    // Inner dot
+    ctx.beginPath();
+    ctx.arc(aimX, aimY, 3, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,210,60,0.9)';
+    ctx.fill();
+    // Crosshair lines
+    ctx.strokeStyle = 'rgba(255,210,60,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(aimX - 18, aimY); ctx.lineTo(aimX - 15, aimY);
+    ctx.moveTo(aimX + 15, aimY); ctx.lineTo(aimX + 18, aimY);
+    ctx.moveTo(aimX, aimY - 18); ctx.lineTo(aimX, aimY - 15);
+    ctx.moveTo(aimX, aimY + 15); ctx.lineTo(aimX, aimY + 18);
+    ctx.stroke();
+    // Glow
+    const g = ctx.createRadialGradient(aimX, aimY, 0, aimX, aimY, 22);
+    g.addColorStop(0, 'rgba(255,210,60,0.15)');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(aimX, aimY, 22, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawKeeper() {
+    ctx.save();
+    // White glow behind glove so it pops on dark pitch
+    ctx.shadowColor = 'rgba(255,255,255,0.9)';
+    ctx.shadowBlur = 18;
+    ctx.font = '52px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🧤', keeperX, keeperY);
+    // Second pass without shadow for crisp emoji
+    ctx.shadowBlur = 0;
+    ctx.fillText('🧤', keeperX, keeperY);
+    ctx.restore();
+  }
+
+  function drawBall() {
+    ctx.save();
+    ctx.translate(ballX, ballY);
+    ctx.scale(ballScale, ballScale);
+    // White glow so ball is visible at all scales
+    ctx.shadowColor = 'rgba(255,255,255,0.85)';
+    ctx.shadowBlur = 14;
+    ctx.font = '34px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⚽', 0, 0);
+    ctx.shadowBlur = 0;
+    ctx.fillText('⚽', 0, 0);
+    ctx.restore();
+  }
+
+  function drawOutcome() {
+    if (!outcomeText || outcomeAlpha <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, outcomeAlpha);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = "bold 36px 'Syne', sans-serif";
+    ctx.fillStyle = outcomeColor;
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur = 16;
+    ctx.fillText(outcomeText, W/2, H/2 + 30);
+    ctx.restore();
+  }
+
+  let lastT = null;
+  function loop(ts) {
+    if (!lastT) lastT = ts;
+    const dt = Math.min((ts - lastT) / 16.67, 3);
+    lastT = ts;
+
+    keeperPatrol(dt);
+
+    if (ballFlying) {
+      ballX += ballVX * dt;
+      ballY += ballVY * dt;
+      // Perspective: ball shrinks linearly as it travels from start to goal
+      const totalDist = BALL_START.y - (GOAL.y + GOAL.h/2);
+      const traveled = BALL_START.y - ballY;
+      const t = Math.max(0, Math.min(1, traveled / totalDist));
+      ballScale = 1 - t * 0.55;
+    }
+
+    if (outcomeAlpha > 0) outcomeAlpha -= 0.008 * dt;
+
+    ctx.clearRect(0, 0, W, H);
+    drawPitch();
+    drawAimZones();
+    drawAimTarget();
+    drawKeeper();
+    drawBall();
+    drawOutcome();
+
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ---- Aim input ----
+  function canvasCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const scaleY = H / rect.height;
+    const src = e.touches ? e.touches[0] : e;
+    return {
+      x: (src.clientX - rect.left) * scaleX,
+      y: (src.clientY - rect.top) * scaleY
+    };
+  }
+
+  function isInGoalZone(x, y) {
+    return x >= GOAL.x + POST + 2 && x <= GOAL.x + GOAL.w - POST - 2 &&
+           y >= GOAL.y + POST + 2 && y <= GOAL.y + GOAL.h - 2;
+  }
+
+  function setAimFromEvent(e) {
+    if (busy) return;
+    const { x, y } = canvasCoords(e);
+    if (isInGoalZone(x, y)) {
+      e.preventDefault(); // only block scroll when touching the goal area
+      aimX = x; aimY = y;
+      document.getElementById('fbMsg').textContent = '🎯 Aim locked! Hit the shot.';
+      document.getElementById('fbMsg').style.color = 'rgba(255,210,60,0.9)';
+      document.getElementById('shootBtn').textContent = '⚽ Shoot!';
+    } else if (e.type === 'click') {
+      document.getElementById('fbMsg').textContent = '👆 Tap inside the goal to aim!';
+      document.getElementById('fbMsg').style.color = '#FFA726';
+    }
+    // If touch outside goal — do nothing, let scroll happen naturally
+  }
+
+  canvas.addEventListener('click', setAimFromEvent);
+  canvas.addEventListener('touchstart', setAimFromEvent, { passive: false });
+  canvas.addEventListener('touchmove', setAimFromEvent, { passive: false });
+
+  // ---- Shoot ----
+  window.takeShot = function() {
+    if (busy) return;
+    if (aimX === null) {
+      document.getElementById('fbMsg').textContent = '👆 Click inside the goal to aim first!';
+      document.getElementById('fbMsg').style.color = '#FFA726';
+      return;
+    }
+
+    busy = true;
+    ballFlying = true;
+    document.getElementById('shootBtn').disabled = true;
+
+    // Reset ball to start
+    ballX = BALL_START.x; ballY = BALL_START.y; ballScale = 1;
+    ballVX = (aimX - BALL_START.x) / 28;
+    ballVY = (aimY - BALL_START.y) / 28;
+
+    // --- Keeper dive decision (made NOW, before ball arrives) ---
+    const goalMidX = GOAL.x + GOAL.w / 2;
+    const aimSide = aimX < goalMidX - 50 ? 'left' : aimX > goalMidX + 50 ? 'right' : 'center';
+    const guessRoll = Math.random();
+    let keeperGuess;
+    if (guessRoll < 0.30) {
+      keeperGuess = aimSide;
+    } else {
+      const opts = ['left', 'center', 'right'].filter(s => s !== aimSide);
+      keeperGuess = opts[Math.floor(Math.random() * opts.length)];
+    }
+
+    const diveMargin = 18;
+    const finalKeeperX = keeperGuess === 'left'
+      ? GOAL.x + keeperW/2 + diveMargin
+      : keeperGuess === 'right'
+        ? GOAL.x + GOAL.w - keeperW/2 - diveMargin
+        : GOAL.x + GOAL.w/2;
+    const finalKeeperY = aimY < GOAL.y + GOAL.h/2
+      ? GOAL.y + keeperH/2 + 6
+      : GOAL.y + GOAL.h - keeperH/2 - 6;
+
+    keeperDiving = true;
+    keeperDiveTargetX = finalKeeperX;
+    keeperDiveTargetY = finalKeeperY;
+
+    fbShots++;
+    document.getElementById('fbShots').textContent = fbShots;
+
+    // Resolve when ball arrives (28 frames @ ~16.67ms = ~467ms)
+    setTimeout(() => {
+      ballFlying = false;
+      ballX = aimX; ballY = aimY;
+
+      // -- Accurate collision: use the FINAL keeper position (dive target), not live position --
+      // (keeper may not have fully arrived yet in animation, but the decision is based on where it's going)
+      const kCX = finalKeeperX, kCY = finalKeeperY;
+      const kHalfW = keeperW/2 + 6, kHalfH = keeperH/2 + 6;
+      const ballInKeeper = aimX >= kCX - kHalfW && aimX <= kCX + kHalfW &&
+                            aimY >= kCY - kHalfH && aimY <= kCY + kHalfH;
+
+      // Ball must be inside post & crossbar bounds
+      const inGoal = aimX > GOAL.x + POST && aimX < GOAL.x + GOAL.w - POST &&
+                     aimY > GOAL.y + POST && aimY < GOAL.y + GOAL.h;
+
+      // Near post/bar
+      const onPost = inGoal && (
+        Math.abs(aimX - GOAL.x) < POST + 10 ||
+        Math.abs(aimX - (GOAL.x + GOAL.w)) < POST + 10 ||
+        Math.abs(aimY - GOAL.y) < POST + 10
+      );
+
+      let result;
+      if (!inGoal) result = 'miss';
+      else if (ballInKeeper) result = 'saved';
+      else if (onPost) result = Math.random() < 0.45 ? 'goal' : 'post';
+      else result = 'goal';
+
+      const msgs = {
+        goal:  ['🎉 GOAL!! Clean finish.','🔥 Top corner! No chance for the keeper.','💥 GOAL! Pure class.','✨ Right in the net!','🥳 GET IN! Beautiful.'],
+        saved: ['🧤 Saved! Keeper dived the right way.','👏 What a stop! Keeper read it.','🧱 Straight at the keeper!','😤 Keeper ate that for breakfast.'],
+        post:  ['🏳️ Hit the post! Agonising.','💀 Rattled the woodwork!','😩 The post said no!'],
+        miss:  ['😬 Miles wide, mate!','🙈 Straight to Row Z.','😭 Somehow missed with the goal wide open!','📺 VAR confirms: still wide.'],
+      };
+      const pick = a => a[Math.floor(Math.random() * a.length)];
+
+      // Outcome flash on canvas
+      const colors = { goal:'#66BB6A', saved:'#FF8A65', post:'#FFC107', miss:'#FF7043' };
+      const labels = { goal:'⚽ GOAL!', saved:'🧤 SAVED!', post:'🏳️ POST!', miss:'😬 WIDE!' };
+      outcomeText = labels[result];
+      outcomeColor = colors[result];
+      outcomeAlpha = 1.6;
+
+      const msgEl = document.getElementById('fbMsg');
+      if (result === 'goal') {
+        fbGoals++; fbStreak++; fbBestStreak = Math.max(fbBestStreak, fbStreak);
+        document.getElementById('fbGoals').textContent = fbGoals;
+        document.getElementById('fbStreak').textContent = fbBestStreak;
+        msgEl.textContent = pick(msgs.goal); msgEl.style.color = '#66BB6A';
+        confetti();
+      } else {
+        fbStreak = 0;
+        msgEl.textContent = pick(msgs[result]);
+        msgEl.style.color = result === 'saved' ? '#FF8A65' : result === 'post' ? '#FFC107' : 'rgba(255,255,255,0.45)';
+      }
+
+      setTimeout(() => {
+        ballX = BALL_START.x; ballY = BALL_START.y; ballScale = 1;
+        ballVX = 0; ballVY = 0;
+        keeperDiving = false; keeperDiveTargetX = null; keeperDiveTargetY = null;
+        keeperX = GOAL.x + GOAL.w/2; keeperY = GOAL.y + GOAL.h/2;
+        aimX = null; aimY = null;
+        busy = false;
+        document.getElementById('shootBtn').disabled = false;
+        document.getElementById('shootBtn').textContent = '⚽ Take the Shot';
+        document.getElementById('fbMsg').textContent = 'Click inside the goal to pick your spot';
+        document.getElementById('fbMsg').style.color = 'rgba(255,255,255,0.5)';
+      }, 1800);
+    }, 28 * 16.67);
+  };
+})();
 
 // =====================
 // FIFA DATE PORTAL — sets Yesterday / Today / Tomorrow buttons with real dates & URLs
